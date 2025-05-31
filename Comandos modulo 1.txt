@@ -1,0 +1,68 @@
+
+============================
+Práctica 2 – Configuración de red
+============================
+
+nmcli con show                     # Muestra las conexiones de red disponibles
+nmcli con up id "Conexión cableada 1"   # Activa la conexión llamada "Conexión cableada 1"
+nmcli con mod "Conexión cableada 1" connection.id Concableada1  # Cambia el nombre de la conexión a Concableada1
+nmcli con mod Concableada1 ipv4.method auto    # Establece el método de IP como automático (DHCP)
+nmcli con up Concableada1         # Reactiva la conexión con configuración DHCP
+
+sudo dhclient ens33               # Solicita manualmente una IP por DHCP en la interfaz ens33
+
+nmcli con mod Concableada1 ipv4.addresses 192.168.10.100/24   # Asigna IP estática con máscara /24
+nmcli con mod Concableada1 ipv4.gateway 192.168.10.1          # Define la puerta de enlace (gateway)
+nmcli con mod Concableada1 ipv4.method manual                 # Cambia el método de IP a manual
+nmcli con up Concableada1         # Reactiva la conexión con IP estática
+
+sudo nano /etc/network/interfaces     # Edita el archivo de configuración de red clásica (si aplica)
+
+auto ens33                            # Activa automáticamente la interfaz ens33 al iniciar
+iface ens33 inet static               # Configura modo estático
+    address 192.168.10.100
+    netmask 255.255.255.0
+    gateway 192.168.10.1
+
+nmcli con mod Concableada1 ipv4.dns "8.8.8.8 8.8.4.4"     # Establece los DNS de Google
+nmcli con up Concableada1         # Activa los cambios de DNS
+
+sudo nano /etc/resolv.conf        # Edita manualmente el archivo de configuración DNS
+
+nameserver 8.8.8.8                # DNS primario
+nameserver 8.8.4.4                # DNS secundario
+
+============================
+Práctica 3 – Usuarios y Grupos
+============================
+
+sudo adduser fernandohf           # Crea el usuario fernandohf
+sudo usermod -aG sudo fernandohf  # Agrega a fernandohf al grupo sudo (administrador)
+
+sudo addgroup guest               # Crea el grupo guest
+sudo adduser maria                # Crea el usuario maria
+sudo usermod -aG guest maria      # Agrega a maria al grupo guest
+sudo userdel maria                # Elimina el usuario maria
+sudo groupdel guest               # Elimina el grupo guest
+
+============================
+Práctica 4 – Permisos de Archivos
+============================
+
+mkdir materia                     # Crea carpeta materia
+cd materia                        # Entra a la carpeta materia
+touch estudiante.txt              # Crea el archivo estudiante.txt
+vi estudiante.txt                 # Abre el archivo con el editor vi
+chmod 700 estudiante.txt          # Solo el propietario tiene todos los permisos
+chmod 070 estudiante.txt          # Solo el grupo tiene todos los permisos
+
+cd ..                             # Sube un nivel de carpeta
+mkdir materia2                    # Crea carpeta materia2
+cd materia                        # Entra a materia nuevamente
+chmod 777 estudiante.txt          # Da permisos totales a todos (solo para pruebas)
+cd ..                             # Sube un nivel
+cp materia/estudiante.txt materia2/     # Copia el archivo a materia2
+cd materia2                       # Entra a materia2
+vi estudiante.txt                 # Edita el archivo copiado
+cd ..                             # Sube al directorio anterior
+rm -r materia                     # Elimina carpeta materia y su contenido
