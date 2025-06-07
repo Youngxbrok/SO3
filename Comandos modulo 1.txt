@@ -1,68 +1,71 @@
+🌐 PRÁCTICA 2 – Configuración de Red
 
-============================
-Práctica 2 – Configuración de red
-============================
+nmcli con show                                # Muestra todas las conexiones de red disponibles
+nmcli con up id "Conexión cableada 1"         # Activa la conexión llamada "Conexión cableada 1"
+nmcli con mod "Conexión cableada 1" connection.id Concableada1    # Renombra la conexión a "Concableada1"
+nmcli con mod Concableada1 ipv4.method auto   # Configura IP dinámica (DHCP)
+nmcli con up Concableada1                     # Activa la conexión con DHCP
 
-nmcli con show                     # Muestra las conexiones de red disponibles
-nmcli con up id "Conexión cableada 1"   # Activa la conexión llamada "Conexión cableada 1"
-nmcli con mod "Conexión cableada 1" connection.id Concableada1  # Cambia el nombre de la conexión a Concableada1
-nmcli con mod Concableada1 ipv4.method auto    # Establece el método de IP como automático (DHCP)
-nmcli con up Concableada1         # Reactiva la conexión con configuración DHCP
+sudo dhclient ens33                           # Solicita manualmente una IP para la interfaz ens33
 
-sudo dhclient ens33               # Solicita manualmente una IP por DHCP en la interfaz ens33
+nmcli con mod Concableada1 ipv4.addresses 192.168.10.100/24   # Asigna dirección IP estática
+nmcli con mod Concableada1 ipv4.gateway 192.168.10.1          # Establece puerta de enlace (gateway)
+nmcli con mod Concableada1 ipv4.method manual                 # Cambia la configuración a IP estática
+nmcli con up Concableada1                     # Activa la conexión con la configuración manual
 
-nmcli con mod Concableada1 ipv4.addresses 192.168.10.100/24   # Asigna IP estática con máscara /24
-nmcli con mod Concableada1 ipv4.gateway 192.168.10.1          # Define la puerta de enlace (gateway)
-nmcli con mod Concableada1 ipv4.method manual                 # Cambia el método de IP a manual
-nmcli con up Concableada1         # Reactiva la conexión con IP estática
+sudo nano /etc/network/interfaces             # Abre archivo tradicional de configuración de red (usado en algunas distros)
 
-sudo nano /etc/network/interfaces     # Edita el archivo de configuración de red clásica (si aplica)
+# Contenido del archivo de interfaces:
+auto ens33                                    # Activa automáticamente la interfaz ens33 al iniciar
+iface ens33 inet static                       # Define que se usará IP estática
+    address 192.168.10.100                    # Dirección IP asignada
+    netmask 255.255.255.0                     # Máscara de red
+    gateway 192.168.10.1                      # Puerta de enlace predeterminada
 
-auto ens33                            # Activa automáticamente la interfaz ens33 al iniciar
-iface ens33 inet static               # Configura modo estático
-    address 192.168.10.100
-    netmask 255.255.255.0
-    gateway 192.168.10.1
+nmcli con mod Concableada1 ipv4.dns "8.8.8.8 8.8.4.4"    # Establece servidores DNS (Google)
+nmcli con up Concableada1                               # Aplica la configuración
 
-nmcli con mod Concableada1 ipv4.dns "8.8.8.8 8.8.4.4"     # Establece los DNS de Google
-nmcli con up Concableada1         # Activa los cambios de DNS
+sudo nano /etc/resolv.conf                     # Edita el archivo de configuración de DNS manualmente
 
-sudo nano /etc/resolv.conf        # Edita manualmente el archivo de configuración DNS
+# Contenido recomendado:
+nameserver 8.8.8.8                             # Servidor DNS principal
+nameserver 8.8.4.4                             # Servidor DNS secundario
 
-nameserver 8.8.8.8                # DNS primario
-nameserver 8.8.4.4                # DNS secundario
+---
 
-============================
-Práctica 3 – Usuarios y Grupos
-============================
+👥 PRÁCTICA 3 – Gestión de Usuarios y Grupos
 
-sudo adduser fernandohf           # Crea el usuario fernandohf
-sudo usermod -aG sudo fernandohf  # Agrega a fernandohf al grupo sudo (administrador)
+sudo adduser fernandohf                        # Crea el usuario "fernandohf"
+sudo usermod -aG sudo fernandohf               # Agrega al usuario al grupo sudo para darle permisos de administrador
 
-sudo addgroup guest               # Crea el grupo guest
-sudo adduser maria                # Crea el usuario maria
-sudo usermod -aG guest maria      # Agrega a maria al grupo guest
-sudo userdel maria                # Elimina el usuario maria
-sudo groupdel guest               # Elimina el grupo guest
+sudo addgroup guest                            # Crea el grupo "guest"
+sudo adduser maria                             # Crea el usuario "maria"
+sudo usermod -aG guest maria                   # Agrega al usuario "maria" al grupo "guest"
 
-============================
-Práctica 4 – Permisos de Archivos
-============================
+sudo userdel maria                             # Elimina el usuario "maria"
+sudo groupdel guest                            # Elimina el grupo "guest"
 
-mkdir materia                     # Crea carpeta materia
-cd materia                        # Entra a la carpeta materia
-touch estudiante.txt              # Crea el archivo estudiante.txt
-vi estudiante.txt                 # Abre el archivo con el editor vi
-chmod 700 estudiante.txt          # Solo el propietario tiene todos los permisos
-chmod 070 estudiante.txt          # Solo el grupo tiene todos los permisos
+---
 
-cd ..                             # Sube un nivel de carpeta
-mkdir materia2                    # Crea carpeta materia2
-cd materia                        # Entra a materia nuevamente
-chmod 777 estudiante.txt          # Da permisos totales a todos (solo para pruebas)
-cd ..                             # Sube un nivel
-cp materia/estudiante.txt materia2/     # Copia el archivo a materia2
-cd materia2                       # Entra a materia2
-vi estudiante.txt                 # Edita el archivo copiado
-cd ..                             # Sube al directorio anterior
-rm -r materia                     # Elimina carpeta materia y su contenido
+📁 PRÁCTICA 4 – Gestión de Archivos y Permisos
+
+mkdir materia                                  # Crea un directorio llamado "materia"
+cd materia                                     # Entra al directorio "materia"
+touch estudiante.txt                           # Crea un archivo vacío llamado "estudiante.txt"
+vi estudiante.txt                              # Abre el archivo en el editor "vi"
+
+chmod 700 estudiante.txt                       # Da permisos completos solo al propietario
+chmod 070 estudiante.txt                       # Da permisos completos solo al grupo
+
+cd ..                                          # Regresa al directorio anterior
+mkdir materia2                                 # Crea una nueva carpeta llamada "materia2"
+cd materia                                     # Vuelve al directorio "materia"
+chmod 777 estudiante.txt                       # Da permisos totales a todos los usuarios (solo para pruebas)
+
+cd ..                                          # Regresa al directorio principal
+cp materia/estudiante.txt materia2/            # Copia el archivo a la carpeta "materia2"
+cd materia2                                    # Entra a la nueva carpeta
+vi estudiante.txt                              # Abre el archivo copiado en el editor
+
+cd ..                                          # Regresa nuevamente
+rm -r materia                                  # Elimina el directorio "materia" junto con su contenido
