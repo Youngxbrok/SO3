@@ -1,0 +1,58 @@
+
+🔧 PRÁCTICA 1 – Gestión de repositorios y red
+
+sudo apt update                       # Actualiza la lista de paquetes disponibles en los repositorios
+sudo apt upgrade -y                  # Instala todas las actualizaciones disponibles automáticamente
+cat /etc/apt/sources.list            # Muestra los repositorios configurados en el sistema
+ls /etc/apt/sources.list.d/          # Lista los archivos de repositorios adicionales
+
+sudo apt search bashtop              # Busca el paquete "bashtop" en los repositorios
+bashtop                              # Ejecuta bashtop (monitor de recursos, si ya está instalado)
+sudo apt install bashtop             # Instala la herramienta bashtop
+bashtop                              # Verifica que bashtop funciona después de instalar
+
+sudo add-apt-repository ppa:bashtop-monitor/bashtop   # Agrega el repositorio externo de bashtop (si no está disponible en los oficiales)
+
+ping 8.8.8.8                         # Verifica conexión a Internet (al DNS de Google)
+ip link                              # Muestra las interfaces de red
+sudo ip link set ens33 up            # Levanta la interfaz de red ens33
+sudo dhclient ens33                  # Solicita una IP al servidor DHCP para esa interfaz
+ip a                                 # Muestra las direcciones IP actuales
+ping archive.ubuntu.com              # Verifica si se puede resolver el dominio y conectar al repositorio
+
+sudo apt purge bashtop               # Elimina bashtop y sus archivos de configuración
+sudo apt autoremove                  # Elimina dependencias que ya no se usan
+
+---
+
+📅 PRÁCTICA 2 – Automatización de tareas
+
+crontab -e                           # Edita las tareas programadas con cron
+at                                   # Ejecuta el comando `at` (programación puntual de tareas)
+sudo apt install at                  # Instala la utilidad "at"
+sudo systemctl status atd            # Verifica que el servicio atd esté funcionando
+
+ls /tmp                              # Muestra los archivos actuales en /tmp
+ls -l /tmp                           # Muestra los permisos y detalles de los archivos en /tmp
+echo "rm -rf /tmp" | at now + 1 minute  # Programa la eliminación del contenido de /tmp en 1 minuto
+ls /tmp                              # Verifica si fue eliminado
+ls -l /tmp                           # Verifica detalles después del intento de limpieza
+
+---
+
+💾 PRÁCTICA 3 – Manejo de discos y montaje
+
+lsblk                                # Muestra todos los discos y particiones conectados
+sudo mkfs.ext4 /dev/sdb              # Formatea el disco /dev/sdb con sistema de archivos ext4
+lsblk                                # Verifica nuevamente la estructura de particiones
+
+sudo mkdir /home/ndisk1              # Crea la carpeta para montar el nuevo disco
+sudo mount /dev/sdb /home/ndisk1     # Monta el disco en la carpeta creada
+cd /home/ndisk1                      # Entra al nuevo disco montado
+
+sudo touch AdrianAlcantara.txt       # Crea un archivo dentro del disco montado
+nano AdrianAlcantara.txt             # Edita el archivo y añade contenido
+
+sudo umount /home/ndisk1             # Desmonta el disco de esa carpeta
+sudo mount /dev/sdb /mnt             # Monta el disco ahora en /mnt
+ls /mnt                              # Verifica que el archivo siga ahí
