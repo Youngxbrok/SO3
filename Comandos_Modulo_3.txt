@@ -1,0 +1,71 @@
+⚙️ PRÁCTICA 1 – Configuración del GRUB y recuperación de root
+
+sudo nano /etc/default/grub               # Edita el archivo de configuración de GRUB
+sudo update-grub                          # Aplica los cambios realizados
+sudo reboot                               # Reinicia el sistema para verificar la configuración
+
+🔐 Recuperación de contraseña del usuario root (modo recuperación):
+
+passwd root                               # Cambia la contraseña del usuario root
+exec /sbin/init                           # Reanuda el inicio normal del sistema
+
+---
+
+💾 PRÁCTICA 2 – Automatización con Scripts (Backup y Red)
+
+📦 Script de backup automático con TAR:
+
+nano backup-h.sh                          # Crea el script de backup
+
+# Contenido del script:
+#!/bin/bash
+fecha=$(date '+%d-%m-%Y:%H:%M')           # Formato de fecha y hora
+tar -czvf "/home/$USER/backup_$fecha.tar.gz" "/home/$USER"    # Comprime el directorio personal
+
+chmod +x backup-h.sh                      # Da permisos de ejecución
+./backup-h.sh                             # Ejecuta el script
+cd /home/fernando43                       # Verifica ubicación del archivo
+ls -l                                     # Lista archivos para confirmar
+
+📝 Script para guardar salida de `ifconfig` con nombre personalizado:
+
+nano save-net.sh                          # Crea el script para guardar configuración de red
+
+# Contenido del script:
+#!/bin/bash
+read -p "¿Qué nombre deseas para el fichero?: " nombre
+ifconfig > "/home/$USER/Escritorio/${nombre}.txt"
+echo "Archivo creado: $nombre.txt"
+
+chmod +x save-net.sh                      # Da permisos de ejecución
+./save-net.sh                             # Ejecuta el script
+
+---
+
+🔐 PRÁCTICA 3 – Configuración de Red, SSH y Llaves
+
+🌐 Verificación de red y conexión desde Windows:
+
+ip a                                      # Verifica IP en la VM (modo Bridge)
+ping 10.0.0.139                           # Prueba de conectividad desde Windows (host)
+
+🔧 Instalación y activación del servicio SSH:
+
+sudo apt install openssh-server           # Instala el servidor SSH
+sudo systemctl enable ssh                 # Habilita el servicio en el arranque
+sudo systemctl start ssh                  # Inicia el servicio
+sudo systemctl status ssh                 # Verifica estado del servicio
+ssh fernando43@10.0.0.139                 # Prueba conexión con usuario y contraseña
+
+🔑 Generación y uso de llaves SSH (desde Windows):
+
+ssh-keygen                                # Genera par de llaves pública-privada (dejar passphrase en blanco)
+
+📤 Copiar la llave pública al servidor Linux:
+
+scp "C:\Users\User\.ssh\id_ed25519.pub" fernando43@10.0.0.139:/home/fernando43/
+
+📂 Instalación de la llave en el servidor Linux:
+
+mkdir -p ~/.ssh                           # Crea carpeta .ssh si no existe
+cat ~/id_ed25519.pub >> ~/.ssh/authorized_keys   # Agrega la llave pública al archivo de llaves autorizadas
