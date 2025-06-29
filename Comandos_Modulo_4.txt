@@ -1,0 +1,150 @@
+🕸️ 1. Configuración de sitios web con Apache
+
+# Actualiza los repositorios de paquetes
+sudo apt update
+
+# Instala el servidor web Apache
+sudo apt install apache2
+
+# Crea el primer sitio web: "holamundo"
+sudo mkdir -p /var/www/holamundo
+echo "<h1>Hola Mundo</h1>" | sudo tee /var/www/holamundo/index.html
+sudo nano /etc/apache2/sites-available/holamundo.conf    # Archivo de configuración virtual
+
+# Contenido sugerido para holamundo.conf
+<VirtualHost *:80>
+    ServerName holamundo.local
+    DocumentRoot /var/www/holamundo
+</VirtualHost>
+
+# Habilita el sitio y recarga Apache
+sudo a2ensite holamundo.conf
+sudo systemctl reload apache2
+
+# Crea el segundo sitio web: "misitio" (en el puerto 8080)
+sudo mkdir -p /var/www/misitio
+echo "<h1>Fernando Holguin Feliz - 20240943 - Sistemas Operativos</h1>" | sudo tee /var/www/misitio/index.html
+sudo nano /etc/apache2/sites-available/misitio.conf      # Archivo de configuración virtual
+
+# Contenido sugerido para misitio.conf
+Listen 8080
+<VirtualHost *:8080>
+    ServerName misitio.local
+    DocumentRoot /var/www/misitio
+</VirtualHost>
+
+# Habilita el sitio y recarga Apache
+sudo a2ensite misitio.conf
+sudo systemctl reload apache2
+
+# Edita el archivo hosts para probar los dominios localmente
+sudo nano /etc/hosts
+
+# Agrega estas líneas:
+127.0.0.1 holamundo.local
+127.0.0.1 misitio.local
+
+
+📬 2. Instalación y configuración de servidor de correo con Postfix
+
+# Instala Postfix y herramientas relacionadas
+sudo apt install postfix mailutils ca-certificates
+
+# Configura los archivos esenciales
+sudo nano /etc/postfix/main.cf
+sudo nano /etc/mailname
+sudo nano /etc/postfix/sasl_passwd
+sudo nano /etc/hosts
+
+# Contenido para /etc/postfix/main.cf (fragmento relevante)
+myhostname = server.mail.com
+myorigin = /etc/mailname
+mydestination = $myhostname, localhost.localdomain, localhost
+mynetworks = 10.0.0.139/24 127.0.0.0/8
+inet_interfaces = all
+inet_protocols = ipv4
+relayhost = [smtp.gmail.com]:587
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_tls_security_level = encrypt
+smtp_use_tls = yes
+
+# Contenido para /etc/hosts
+
+127.0.0.1 localhost server.mail.com
+
+# Contenido para /etc/mailname
+gmail.com
+
+# Contenido para /etc/postfix/sasl_passwd
+[smtp.gmail.com]:587    tu_correo@gmail.com:clave_de_aplicacion
+
+# Protege el archivo de contraseñas
+sudo postmap /etc/postfix/sasl_passwd
+sudo chown root:root /etc/postfix/sasl_passwd*
+sudo chmod 600 /etc/postfix/sasl_passwd*
+
+# Reinicia y habilita Postfix
+sudo systemctl restart postfix
+sudo systemctl enable postfix
+
+# Prueba el envío de correos
+echo "Mensaje de prueba" | mail -s "Asunto de prueba" destinatario@gmail.com
+
+# Verifica la cola de mensajes y el estado
+mailq
+
+
+
+🖨️ 3. Instalación y configuración de servidor de impresión (CUPS)
+
+# Instala CUPS y el driver para impresora PDF
+sudo apt install cups printer-driver-cups-pdf -y
+
+# Habilita e inicia CUPS
+sudo systemctl enable cups
+sudo systemctl start cups
+
+# Asegúrate de estar en el grupo de administración de impresoras
+sudo usermod -aG lpadmin $USER
+
+# Configura CUPS para aceptar conexiones locales y de red
+sudo nano /etc/cups/cupsd.conf
+
+# Verifica y reinicia CUPS
+sudo cupsd -t     # Verifica sintaxis
+sudo systemctl restart cups
+
+# Permite conexiones desde tu red (ajusta IP según tu entorno)
+sudo ufw allow from 10.0.0.0/24 to any port 631
+
+# Accede desde un navegador en otra máquina:
+# http://[IP-del-servidor]:631
+
+
+📝 Fragmento recomendado para /etc/cups/cupsd.conf:
+
+Listen localhost:631
+Listen 10.0.0.139:631
+Listen /run/cups/cups.sock
+
+Browsing On
+BrowseLocalProtocols dnssd
+WebInterface Yes
+DefaultAuthType Basic
+
+<Location />
+  Order allow,deny
+  Allow from 127.0.0.1
+  Allow from 10.0.0.*
+</Location>
+
+<Location /admin>
+  AuthType Default
+  Require user @SYSTEM
+  Order allow,deny
+  Allow from 127.0.0.1
+  Allow from 10.0.0.*
+</Location>
