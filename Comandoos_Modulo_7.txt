@@ -1,0 +1,110 @@
+💻 Cliente NFS (Montaje en cliente)
+
+📦 Instalación del cliente NFS
+sudo apt update
+sudo apt install nfs-common -y
+
+📁 Montaje del recurso NFS
+sudo mkdir -p /mnt/OS3
+sudo mount 10.0.0.139:/srv/OS3 /mnt/OS3
+ls /mnt/OS3
+
+🔁 Montaje persistente con fstab
+sudo nano /etc/fstab
+10.0.0.139:/srv/OS3  /mnt/OS3  nfs  defaults  0  0
+
+🧹 Prueba del montaje persistente
+sudo umount /mnt/OS3
+sudo reboot
+ls /mnt/OS3
+
+📡 Configuración de Samba (Carpeta compartida por SMB)
+
+📦 Instalación y activación del servicio Samba
+sudo apt update
+sudo apt install samba -y
+sudo systemctl enable smbd
+sudo systemctl start smbd
+
+📁 Crear carpeta y archivos compartidos
+sudo mkdir -p /srv/samba/shared
+sudo chown -R nobody:nogroup /srv/samba/shared
+sudo chmod -R 0775 /srv/samba/shared
+sudo touch /srv/samba/shared/Adrian{1..100}.txt
+
+
+🛠️ Configuración de Samba
+
+sudo nano /etc/samba/smb.conf
+
+[shared]
+   comment = Share Directory
+   path = /srv/samba/shared
+   browseable = yes
+   writeable = yes
+   guest ok = no
+   valid users = fernando43 
+
+📄 Visualizar un archivo compartido
+
+cat /srv/samba/shared/Adrian99.txt
+
+👤 Usuarios Samba y AD (Active Directory)
+
+👥 Crear usuario local y Samba
+sudo useradd -m lanegracubana
+sudo passwd lanegracubana
+sudo smbpasswd -a lanegracubana
+
+🧱 Configuración de Samba como Controlador de Dominio (AD-DC)
+
+📦 Instalación de paquetes adicionales
+sudo apt install samba samba-dsdb-modules samba-vfs-modules -y
+
+🛑 Detener servicios anteriores
+sudo systemctl stop smbd nmbd
+sudo systemctl disable smbd nmbd
+
+🧰 Provisión del dominio
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+sudo samba-tool domain provision --use-rfc2307 --interactive
+
+📡 Configuración DNS interna
+sudo systemctl stop systemd-resolved
+sudo systemctl disable systemd-resolved
+sudo rm /etc/resolv.conf
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+
+🚀 Iniciar servicios de AD
+sudo systemctl start samba-ad-dc
+sudo systemctl enable samba-ad-dc
+sudo systemctl status samba-ad-dc
+
+🧪 Comprobación y diagnóstico
+sudo netstat -tulpn | grep :53            # Verifica DNS local
+sudo samba-tool testparm                  # Revisa la configuración de Samba
+sudo journalctl -xeu samba-ad-dc          # Revisión de logs
+
+🧰 Depuración Avanzada y Respaldo
+
+🧹 Eliminar configuración anterior (si hay fallos)
+sudo systemctl stop samba-ad-dc
+sudo rm -rf /var/lib/samba/*
+sudo rm -rf /etc/samba/smb.conf
+sudo samba-tool domain provision --use-rfc2307 --interactive
+
+🧪 Verificación del dominio
+sudo samba-tool domain info so3.inet
+sudo samba-tool dns query 10.0.0.141 so3.inet @ ALL
+
+👤 Administración de usuarios en el dominio
+
+👤 Crear usuario en el dominio
+sudo samba-tool user create lanegracubana
+sudo samba-tool user setpassword lanegracubana
+
+👥 Agregar a grupo de administradores
+sudo samba-tool group addmembers "Domain Admins" lanegracubana
+
+📋 Listar usuarios
+sudo samba-tool user list
