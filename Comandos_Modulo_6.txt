@@ -1,0 +1,79 @@
+🔐 PRÁCTICA – Cifrado con GPG
+
+# Instalación de GPG
+sudo apt install gpg2                   # Instala la herramienta GPG2
+sudo apt install gnupg2                # Alternativa/paquete relacionado
+
+# Generación de llave GPG
+gpg2 --full-generate-key               # Crea un par de claves GPG (pública y privada)
+
+# Preparación de carpetas y archivos
+mkdir ~/Documentos/cifrado             # Crea el directorio "cifrado" en Documentos
+cd ~/Documentos/cifrado                # Accede a la carpeta
+touch confile.txt                      # Crea el archivo de texto a cifrar
+sudo nano confile.txt                  # Edita y escribe contenido en el archivo
+
+# Cifrado del archivo
+sudo gpg2 -c confile.txt               # Cifra el archivo con contraseña simétrica
+
+# Verificaciones y limpieza
+ls                                     # Muestra el archivo cifrado con extensión .gpg
+rm confile.txt                         # Elimina el archivo original
+cat confile.txt.gpg                    # Muestra contenido cifrado (ilegible)
+gpg2 confile.txt.gpg                   # Descifra el archivo
+cat confile.txt                        # Verifica que el contenido original se recuperó
+
+---
+
+🛡️ PRÁCTICA – Cortafuegos con iptables y UFW
+
+# Ver estado de servicios
+sudo systemctl status vsftpd          # Verifica el estado del servidor FTP
+sudo systemctl status apache2         # Verifica el estado del servidor web
+sudo systemctl status ssh             # Verifica el estado del servidor SSH
+
+# Desactivar UFW y aplicar reglas con iptables
+sudo ufw disable                      # Desactiva el firewall UFW
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP   # Bloquea HTTP
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP   # Bloquea FTP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP   # Bloquea SSH
+sudo iptables -A INPUT -p tcp --dport 20 -j DROP   # Bloquea FTP Data
+
+# Eliminar reglas con iptables
+sudo iptables -D INPUT -p tcp --dport 20 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+
+# Activar UFW y aplicar políticas
+sudo ufw enable                       # Activa el firewall UFW
+sudo ufw deny 21                      # Bloquea FTP
+sudo ufw deny 22                      # Bloquea SSH
+sudo ufw deny 80                      # Bloquea HTTP
+sudo ufw allow 80                     # Permite HTTP
+sudo ufw allow 21                     # Permite FTP
+sudo ufw allow 22                     # Permite SSH
+
+---
+
+🕵️ PRÁCTICA – Monitorización de tráfico con SNORT
+
+# Instalación de Snort
+sudo apt install snort -y             # Instala Snort
+
+# Configuración de reglas locales
+sudo nano /etc/snort/rules/local.rules
+
+# Reglas personalizadas agregadas al archivo:
+alert icmp any any -> any any (msg:"Trafico ICMP Detectado"; sid:1000001;)
+alert tcp any any -> any 21 (msg:"Trafico FTP Detectado"; sid:1000002;)
+alert tcp any any -> any 22 (msg:"Trafico SSH Detectado"; sid:1000003;)
+alert tcp any any -> any 80 (msg:"Trafico HTTP Detectado"; sid:1000004;)
+
+# Reinicio y habilitación del servicio
+sudo systemctl restart snort
+sudo systemctl enable snort
+sudo systemctl status snort
+
+# Ejecución en modo consola
+ip a                                  # Verifica la interfaz activa
+sudo snort -A console -q -c /etc/snort/snort.conf -i ens33   # Inicia Snort en modo consola en la interfaz "ens33"
