@@ -1,0 +1,99 @@
+🚀 PRÁCTICA 1 – Sincronización de carpetas con Rsync 
+
+# 1. Crear carpeta y archivos en servidor primario
+mkdir -p ~/sync_folder
+cd ~/sync_folder
+touch file{1..100}.txt                # Crea 100 archivos de prueba
+
+# 2. Copiar contenido al servidor remoto vía rsync
+rsync -avz ~/sync_folder/ user@remoto:/home/user/backup_folder/
+
+# 3. Crear script de sincronización (sync.sh)
+cat << 'EOF' > ~/sync_folder/sync.sh
+#!/bin/bash
+rsync -avz /home/user/sync_folder/ user@remoto:/home/user/backup_folder/
+EOF
+chmod +x ~/sync_folder/sync.sh
+
+# 4. Configurar crontab para ejecutar cada minuto
+(crontab -l 2>/dev/null; echo "* * * * * /home/user/sync_folder/sync.sh") | crontab -
+
+# 5. Validar funcionamiento
+# Crear un nuevo archivo en servidor primario:
+touch ~/sync_folder/new_file.txt
+# Esperar un minuto y verificar en servidor secundario:
+ssh user@remoto "ls /home/user/backup_folder/ | grep new_file.txt"
+
+---
+
+🖥️ PRÁCTICA 2 – Instalación y configuración de Clúster HA 
+
+# 1. Instalar Pacemaker y Corosync en ambos nodos
+sudo apt update
+sudo apt install pacemaker corosync pcs -y
+
+# 2. Habilitar servicio pcs y establecer contraseña de hacluster
+sudo systemctl enable pcsd
+sudo systemctl start pcsd
+echo "contraseña_cluster" | sudo passwd --stdin hacluster
+
+# 3. Autenticar nodos entre sí
+sudo pcs cluster auth nodo1 nodo2 -u hacluster -p contraseña_cluster
+
+# 4. Crear y arrancar el clúster en modo bridge
+sudo pcs cluster setup --name mycluster nodo1 nodo2
+sudo pcs cluster start --all
+sudo pcs property set stonith-enabled=false
+sudo pcs resource defaults resource-stickiness=100
+
+# 5. Configurar IP flotante
+sudo pcs resource create VirtualIP ocf:heartbeat:IPaddr2     ip=192.168.100.50 cidr_netmask=24 op monitor interval=30s
+
+# 6. Probar HA
+ping 192.168.100.50
+# Reiniciar nodos alternadamente:
+sudo pcs cluster stop nodo1
+# El ping debe mantenerse accesible
+
+---
+
+🌐 PRÁCTICA 3 – Clúster HA HTTP con Keepalived 
+
+# 1. Instalar Keepalived y servidor web en ambos nodos
+sudo apt update
+sudo apt install keepalived nginx -y
+
+# 2. Configurar página HTML en cada servidor
+echo "Server1" | sudo tee /var/www/html/index.html  # En nodo1
+echo "Server2" | sudo tee /var/www/html/index.html  # En nodo2
+
+# 3. Configurar Keepalived
+# En /etc/keepalived/keepalived.conf de nodo1:
+cat << 'EOF' | sudo tee /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass secret
+    }
+    virtual_ipaddress {
+        192.168.100.60
+    }
+}
+EOF
+
+# En /etc/keepalived/keepalived.conf de nodo2:
+# (igual, pero state BACKUP y priority 90)
+
+# 4. Iniciar servicio Keepalived en ambos nodos
+sudo systemctl enable keepalived
+sudo systemctl start keepalived
+
+# 5. Validar HA HTTP
+# Detener Nginx en nodo1:
+sudo systemctl stop nginx
+# Acceder en navegador a http://192.168.100.60 debe mostrar "Server2"
