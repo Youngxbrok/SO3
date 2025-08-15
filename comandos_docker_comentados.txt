@@ -1,0 +1,40 @@
+# Instalación y configuración básica de Docker
+614  sudo apt update                               # Actualiza la lista de paquetes disponibles
+615  sudo apt install docker.io -y                 # Instala Docker desde los repositorios oficiales
+616  sudo systemctl enable docker                  # Habilita Docker para que inicie automáticamente al arrancar el sistema
+617  sudo systemctl start docker                   # Inicia el servicio de Docker
+618  sudo systemctl status docker                  # Muestra el estado actual del servicio Docker
+
+# Despliegue de contenedor Nginx con página personalizada
+619  sudo docker pull nginx                        # Descarga la imagen oficial de Nginx desde Docker Hub
+620  sudo mkdir -p /home/website                   # Crea el directorio para alojar la página web
+621  echo "<h1>Fernando Holguin Feliz - Matricula 2024-0943</h1>" | sudo tee /home/website/index.html  # Crea el archivo HTML con el contenido indicado
+622  sudo docker run -d --name nginxweb -p 8888:80 -v /home/website:/usr/share/nginx/html nginx  # Ejecuta un contenedor Nginx mapeando el puerto 8888 al 80 y usando el directorio creado
+
+# Instalación de Portainer (Interfaz gráfica para Docker)
+625  sudo docker pull portainer/portainer-ce       # Descarga la imagen de Portainer CE
+626  sudo docker volume create portainer_data      # Crea un volumen persistente para los datos de Portainer
+627  sudo docker run -d -p 9443:9443 -p 8000:8000 --name portainer --restart=always \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -v portainer_data:/data portainer/portainer-ce  # Ejecuta Portainer con acceso al socket de Docker y persistencia de datos
+628  sudo ufw disable                              # Desactiva el firewall UFW temporalmente para evitar bloqueos
+
+# Instalación y uso de Docker Compose
+631  sudo apt install docker-compose -y            # Instala Docker Compose desde los repositorios
+632  sudo nano docker-compose.yml                  # Abre un archivo de configuración docker-compose.yml para editarlo
+633  sudo docker-compose up -d                     # Levanta los servicios definidos en el archivo docker-compose.yml en segundo plano
+
+# Información y gestión de Docker
+642  docker --version                              # Muestra la versión de Docker instalada
+643  sudo apt update && sudo apt upgrade -y        # Actualiza lista de paquetes y aplica actualizaciones
+646  curl -fsSL https://get.docker.com | sudo sh   # Instala Docker usando el script oficial de Docker
+647  docker compose version                        # Muestra la versión del nuevo plugin 'docker compose'
+648  sudo docker compose up -d                     # Levanta servicios definidos usando el nuevo formato de Docker Compose
+649  sudo nano docker-compose.yml                  # Vuelve a editar el archivo docker-compose.yml
+650  sudo systemctl restart docker                 # Reinicia el servicio Docker
+651  sudo systemctl enable docker                  # Habilita Docker para que arranque al inicio
+652  sudo systemctl status docker                  # Muestra nuevamente el estado del servicio Docker
+653  sudo docker compose up -d                     # Levanta servicios con docker compose
+654  sudo ufw disable                              # Desactiva el firewall UFW
+655  ping wordpress.com                            # Verifica la conectividad hacia wordpress.com
+656  history                                       # Muestra el historial de comandos ejecutados
