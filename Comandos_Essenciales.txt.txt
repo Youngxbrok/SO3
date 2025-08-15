@@ -1,0 +1,84 @@
+
+############################################################
+# COMANDOS ESENCIALES - Linux para Prácticas
+# Autor: Fernando Holguín
+# Fecha: 2025
+############################################################
+
+###########################
+# 1. Información del sistema
+###########################
+uname -a
+cat /etc/os-release
+top
+htop
+df -h
+free -h
+
+###########################
+# 2. Gestión de usuarios y grupos
+###########################
+cat /etc/passwd
+cat /etc/group
+sudo useradd -m fernando43
+sudo passwd fernando43
+sudo usermod -aG sudo fernando43
+who
+w
+
+###########################
+# 3. Gestión de procesos
+###########################
+ps aux
+ps aux | grep <nombre_proceso>
+kill <PID>
+kill -9 <PID>
+top
+htop
+
+###########################
+# 4. Conexión de red y diagnóstico
+###########################
+ip addr
+ifconfig
+ping <IP_o_dominio>
+route -n
+ip route
+netstat -tulnp
+ss -tulnp
+nc -zv <host> <puerto>
+
+###########################
+# 5. Gestión de servicios (Systemd)
+###########################
+systemctl status <servicio>
+sudo systemctl start <servicio>
+sudo systemctl stop <servicio>
+sudo systemctl restart <servicio>
+sudo systemctl enable <servicio>
+sudo systemctl disable <servicio>
+
+###########################
+# 6. Archivos y permisos
+###########################
+ls -l
+chmod 755 <archivo_o_carpeta>
+chown fernando43:fernando43 <archivo_o_carpeta>
+du -sh <carpeta>
+
+###########################
+# 7. Logs y monitoreo
+###########################
+journalctl -xe
+journalctl -u <servicio> -f
+tail -f /var/log/syslog
+tail -f /var/log/auth.log
+
+###########################
+# 8. Gestión de paquetes (apt para Debian/Ubuntu)
+###########################
+sudo apt update
+sudo apt upgrade -y
+sudo apt install <paquete> -y
+sudo apt remove <paquete> -y
+apt search <nombre_paquete>
