@@ -1,0 +1,213 @@
+
+############################################################
+# GUÍA COMPLETA: Terraform + Ansible + Webmin (Linux y Windows)
+# Autor: Fernando Holguín
+# Fecha: 2025
+############################################################
+
+###########################
+# 1. Descargar e instalar Terraform
+###########################
+wget http://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip
+unzip terraform_1.12.2_linux_amd64.zip
+sudo mv terraform /usr/local/bin
+cd /usr/local/bin
+ls -l
+
+###########################
+# 2. Preparar proyecto de Terraform
+###########################
+mkdir terraform-do
+cd terraform-do
+ssh-keygen
+cat ~/.ssh/id_ed25519.pub
+
+###########################
+# 3. Configuración de Terraform para DigitalOcean
+###########################
+# main.tf
+terraform {
+  required_providers {
+    digitalocean = {
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.0"
+    }
+  }
+}
+
+provider "digitalocean" {
+  token = "Token de acceso a DigitalOcean"
+}
+
+resource "digitalocean_droplet" "terraformVM" {
+  name      = "droplet-terraform"
+  region    = "nyc3"                                                                                 
+  size      = "s-1vcpu-1gb"
+  image     = "ubuntu-22-04-x64"                                             
+  ssh_keys  = [var.ssh_fingerprint]  
+  tags      = ["terraform", "demo"]
+}
+
+variable "ssh_fingerprint" {
+  default= "Fingerprint de tu llave pública SSH"
+}
+
+output "droplet_ip" {
+  value = digitalocean_droplet.terraformVM.ipv4_address
+}
+
+###########################
+# 4. Inicializar y aplicar Terraform
+###########################
+terraform init
+terraform apply
+# Confirmar con "yes" cuando Terraform lo solicite
+
+###########################
+# 5. Instalar y configurar Ansible
+###########################
+sudo apt install ansible -y
+ansible --version
+sudo mkdir -p /etc/ansible
+cd /etc/ansible
+sudo nano ansible.cfg
+
+# ansible.cfg
+[defaults]
+inventory = /etc/ansible/hosts
+private_key_file = /home/fernando43/.ssh/id_rsa
+host_key_checking = False
+ask_become_pass = True
+
+[ssh_connection]
+ssh_args = -o ForwardAgent=yes -o ControlMaster=auto -o ControlPersist=60s
+
+###########################
+# 6. Configuración de inventario (hosts)
+###########################
+sudo nano hosts
+
+# hosts
+[win]
+10.0.0.139
+
+[win:vars]
+ansible_user=ansible
+ansible_password=1234
+ansible_port=5985
+ansible_connection=winrm
+ansible_winrm_transport=basic
+ansible_winrm_server_cert_validation=ignore
+
+[linux]
+165.227.195.227
+
+[linux:vars]
+ansible_user=ansible
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+ansible_become_password=1234
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+###########################
+# 7. Configuración de usuario SSH para Ansible
+###########################
+ssh-keygen -t rsa -b 4096
+sudo useradd -m ansible
+sudo usermod -aG sudo ansible
+sudo chsh -s /bin/bash ansible
+sudo mkdir -p /home/ansible/.ssh
+sudo touch /home/ansible/.ssh/authorized_keys
+sudo chmod 600 /home/ansible/.ssh/authorized_keys
+sudo chown ansible:ansible /home/ansible/.ssh/authorized_keys
+
+###########################
+# 8. Conexión SSH y Windows Remoting
+###########################
+ssh ansible@165.227.195.227
+ssh root@206.189.182.63
+ssh root@68.183.109.85
+
+# PowerShell en Windows para habilitar WinRM:
+Set-ExecutionPolicy RemoteSigned -Force
+Enable-PSRemoting -Force
+Set-Item WSMan:\\localhost\\Service\\AllowUnencrypted -Value $true
+Set-Item WSMan:\\localhost\\Service\\Auth\\Basic -Value $true
+Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value '*' -Force
+netsh advfirewall firewall add rule name="WinRM HTTP" dir=in action=allow protocol=TCP localport=5985
+netsh advfirewall firewall set rule group="Administración remota de Windows" new enable=yes
+Restart-Service WinRM
+
+$Password = ConvertTo-SecureString "1234" -AsPlainText -Force
+New-LocalUser -Name "ansible" -Password $Password -FullName "Ansible User" -Description "Usuario Ansible"
+Add-LocalGroupMember -Group "Administradores" -Member "ansible"
+
+winrm enumerate winrm/config/listener
+Test-NetConnection -ComputerName localhost -Port 5985
+
+###########################
+# 9. Ejemplo de ejecución de módulo Ansible
+###########################
+ansible win -i /etc/ansible/hosts -m win_shell -a "Move-Item -Path 'C:/Users/fernando/Desktop/pruebadhoc.txt' -Destination 'C:/Users/fernando/Documents/'"
+sudo visudo 
+# Añadir: ansible ALL=(ALL) NOPASSWD: ALL
+ansible linux -i /etc/ansible/hosts -m reboot --become
+
+###########################
+# 10. Playbook Ansible para Windows (Notepad++)
+###########################
+# install_notepadpp.yml
+- name: Descargar e instalar Notepad++ en Windows
+  hosts: win
+  gather_facts: no
+  tasks:
+    - name: Descargar instalador de Notepad++
+      win_get_url:
+        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.5.3/npp.8.5.3.Installer.x64.exe
+        dest: C:\\Users\\fernando\\Downloads\\npp_installer.exe
+
+    - name: Ejecutar instalador de Notepad++ en modo silencioso
+      win_package:
+        path: C:\\Users\\fernando\\Downloads\\npp_installer.exe
+        arguments: /S
+        state: present
+
+# Ejecutar playbook:
+ansible-playbook -i /etc/ansible/hosts install_notepadpp.yml
+
+###########################
+# 11. Playbook Ansible para Linux (NGINX)
+###########################
+# install_nginx.yml
+- name: Instalar y arrancar NGINX en DigitalOcean
+  hosts: linux
+  become: yes
+  tasks:
+    - name: Instalar NGINX
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Iniciar y habilitar el servicio NGINX
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+# Ejecutar playbook:
+ansible-playbook -i /etc/ansible/hosts install_nginx.yml
+
+###########################
+# 12. Instalación de Webmin en Linux
+###########################
+sudo apt update -y
+sudo apt upgrade -y
+sudo apt install -y wget apt-transport-https software-properties-common gnupg
+wget -qO - http://www.webmin.com/jcameron-key.asc | sudo apt-key add -
+sudo add-apt-repository "deb http://download.webmin.com/download/repository sarge contrib"
+sudo apt update -y
+sudo apt install -y webmin
+sudo systemctl status webmin
+# Acceder desde navegador: https://<IP_del_servidor>:10000
