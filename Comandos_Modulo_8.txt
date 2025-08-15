@@ -22,6 +22,50 @@
 # Instalación y uso de Docker Compose
 631  sudo apt install docker-compose -y            # Instala Docker Compose desde los repositorios
 632  sudo nano docker-compose.yml                  # Abre un archivo de configuración docker-compose.yml para editarlo
+version: '3.8'
+
+#############################
+# Servicios Docker
+#############################
+services:
+
+  # Servicio de base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: wordpress_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword   # Contraseña del root de MySQL
+      MYSQL_DATABASE: wordpress_db        # Nombre de la base de datos
+      MYSQL_USER: wp_user                 # Usuario de WordPress
+      MYSQL_PASSWORD: wppassword          # Contraseña del usuario
+    volumes:
+      - db_data:/var/lib/mysql            # Persistencia de datos
+
+  # Servicio de WordPress
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    depends_on:
+      - db
+    ports:
+      - "8080:80"                         # Exponer WordPress en el puerto 8080
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306          # Host y puerto de la base de datos
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress_db
+    volumes:
+      - wp_data:/var/www/html              # Persistencia de archivos de WordPress
+
+#############################
+# Volúmenes para persistencia
+#############################
+volumes:
+  db_data:
+  wp_data:
+
 633  sudo docker-compose up -d                     # Levanta los servicios definidos en el archivo docker-compose.yml en segundo plano
 
 # Información y gestión de Docker
